@@ -98,10 +98,10 @@ program GITM
 
      if (iCommGITM /= MPI_COMM_NULL) then
 
-        do while (CurrentTime < (StartTime+nIter*DtCouple))
+        do while (CurrentTime < (RestartTime+nIter*DtCouple))
 
-           !write(*,*) '>>>GITM start iterations---',nIter,iproc ,&
-           !    CurrentTime,EndTime
+!           write(*,*) '>>>GITM start iterations---',nIter,iproc ,&
+!               CurrentTime,EndTime
            call calc_pressure
 
 !!! We may have to split cMax and Dt calculation!!!

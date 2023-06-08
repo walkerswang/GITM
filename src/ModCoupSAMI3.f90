@@ -112,6 +112,12 @@ contains
             (iBlock-1)*(nAlts+4)-1:iBlock*(nAlts+4)-2) = &
             Velocity(:,:,:,iNorth_,iBlock)
 
+       GITMVars(14,&
+            (iBlock-1)*(nLons+4)-1:iBlock*(nLons+4)-2,&
+            (iBlock-1)*(nLats+4)-1:iBlock*(nLats+4)-2,&
+            (iBlock-1)*(nAlts+4)-1:iBlock*(nAlts+4)-2) = &
+            Potential(:,:,:,iBlock)
+
        GITMLons((iBlock-1)*(nLons+4)-1:iBlock*(nLons+4)-2) = &
             Longitude(:,iBlock)
 
@@ -433,106 +439,108 @@ contains
     tag_SandR1 = 222
     tag_SandR2 = 333
 
-    if (iCommGITM /= MPI_COMM_NULL) then
+    !!!! GITM does not need info from SAMI3
+    
+    if (iCommGITM /= MPI_COMM_NULL) then 
 
-       call MPI_INTERCOMM_CREATE(iCommGITM,0, &
-            iCommGlobal,SamiMaster,tag_inter,intercomm1,iError)
-       call MPI_COMM_RANK(intercomm1,irank,iError)
+        call MPI_INTERCOMM_CREATE(iCommGITM,0, &
+             iCommGlobal,SamiMaster,tag_inter,intercomm1,iError)
+        call MPI_COMM_RANK(intercomm1,irank,iError)
 
-       if (irank == 0) then
+        if (irank == 0) then
 
-          !recv from sami3
-          call MPI_RECV(SAMIVars_g,&
-               nf*nz*nlt*10,&
-               MPI_REAL,0,tag_SandR,&
-               intercomm1,status,iError)
+           !recv from sami3
+!           call MPI_RECV(SAMIVars_g,&
+!                nf*nz*nlt*10,&
+!                MPI_REAL,0,tag_SandR,&
+!                intercomm1,status,iError)
 
-          call MPI_RECV(SAMIPhi_g,&
-               nf*nlt,&
-               MPI_REAL,0,tag_SandR,&
-               intercomm1,status,iError)
+!           call MPI_RECV(SAMIPhi_g,&
+!                nf*nlt,&
+!                MPI_REAL,0,tag_SandR,&
+!                intercomm1,status,iError)
 
-          blonst_g = SAMIVars_g(1,:,:,:)
-          blatst_g = SAMIVars_g(2,:,:,:)
-          baltst_g = SAMIVars_g(3,:,:,:)
+!           blonst_g = SAMIVars_g(1,:,:,:)
+!           blatst_g = SAMIVars_g(2,:,:,:)
+!           baltst_g = SAMIVars_g(3,:,:,:)
 
-          !print*,'SAMIPhi_g a',SAMIPhi_g(:,1)
+!           !print*,'SAMIPhi_g a',SAMIPhi_g(:,1)
 
-       endif
+        endif
 
-       call report("GITM Broadcasting SAMI Data",0)
+!        call report("GITM Broadcasting SAMI Data",0)
 
-       ! write(*,*) "GITM Proc, before bcast : ", irank, iProcGlobal
+!        ! write(*,*) "GITM Proc, before bcast : ", irank, iProcGlobal
 
-       do i=1,10
+        do i=1,10
 
-          do iZ = 1, nz
+           do iZ = 1, nz
 
-             call MPI_BARRIER(iCommGITM,iError)
-             ! if (iProcGlobal == 30) write(*,*) "Looping exchange start", iProcGlobal, i, iZ, nf*nlt
-             if (iProc == 0) tmp2d = SAMIVars_g(i,iZ,:,:)
-             call mpi_bcast(tmp2d, nf*nlt, MPI_REAL,0,iCommGITM,iError)
-             ! if (iProcGlobal == 30) write(*,*) "Looping exchange after bcast", iProcGlobal, i, iZ
+              call MPI_BARRIER(iCommGITM,iError)
+!              ! if (iProcGlobal == 30) write(*,*) "Looping exchange start", iProcGlobal, i, iZ, nf*nlt
+!              if (iProc == 0) tmp2d = SAMIVars_g(i,iZ,:,:)
+!              call mpi_bcast(tmp2d, nf*nlt, MPI_REAL,0,iCommGITM,iError)
+!              ! if (iProcGlobal == 30) write(*,*) "Looping exchange after bcast", iProcGlobal, i, iZ
 
-             if (iProc > 0) SAMIVars_g(i,iZ,:,:) = tmp2d
+!              if (iProc > 0) SAMIVars_g(i,iZ,:,:) = tmp2d
 
-             ! write(*,*) "iError : ", iError, iProcGlobal, i 
-             call MPI_BARRIER(iCommGITM,iError)
+!              ! write(*,*) "iError : ", iError, iProcGlobal, i 
+              call MPI_BARRIER(iCommGITM,iError)
 
-             !if (iProcGlobal == 30) write(*,*) "Looping exchange after barrier", iProcGlobal, i, iZ
+!              !if (iProcGlobal == 30) write(*,*) "Looping exchange after barrier", iProcGlobal, i, iZ
 
-          enddo
+           enddo
 
-!          call MPI_BARRIER(iCommGITM,iError)
-!          if (iProcGlobal == 30) write(*,*) "Looping exchange start", iProcGlobal, i, nf*nz*nlt
-!          if (iProc == 0) tmp = SAMIVars_g(i,:,:,:)
-!          call mpi_bcast(tmp, nf*nz*nlt, MPI_REAL,0,iCommGITM,iError)
-!          if (iProcGlobal == 30) write(*,*) "Looping exchange after bcast", iProcGlobal, i
-!
-!          if (iProc > 0) SAMIVars_g(i,:,:,:) = tmp
-!
-!          write(*,*) "iError : ", iError, iProcGlobal, i 
-!          call MPI_BARRIER(iCommGITM,iError)
-!
-!          if (iProcGlobal == 30) write(*,*) "Looping exchange after barrier", iProcGlobal, i
+! !          call MPI_BARRIER(iCommGITM,iError)
+! !          if (iProcGlobal == 30) write(*,*) "Looping exchange start", iProcGlobal, i, nf*nz*nlt
+! !          if (iProc == 0) tmp = SAMIVars_g(i,:,:,:)
+! !          call mpi_bcast(tmp, nf*nz*nlt, MPI_REAL,0,iCommGITM,iError)
+! !          if (iProcGlobal == 30) write(*,*) "Looping exchange after bcast", iProcGlobal, i
+! !
+! !          if (iProc > 0) SAMIVars_g(i,:,:,:) = tmp
+! !
+! !          write(*,*) "iError : ", iError, iProcGlobal, i 
+! !          call MPI_BARRIER(iCommGITM,iError)
+! !
+! !          if (iProcGlobal == 30) write(*,*) "Looping exchange after barrier", iProcGlobal, i
 
-       enddo
+        enddo
 
-       !write(*,*) "GITM Proc, after bcast : ", irank, iProcGlobal
+!        !write(*,*) "GITM Proc, after bcast : ", irank, iProcGlobal
 
-       blonst_g = SAMIVars_g(1,:,:,:)
-       blatst_g = SAMIVars_g(2,:,:,:)
-       baltst_g = SAMIVars_g(3,:,:,:)
+!        blonst_g = SAMIVars_g(1,:,:,:)
+!        blatst_g = SAMIVars_g(2,:,:,:)
+!        baltst_g = SAMIVars_g(3,:,:,:)
 
-       call MPI_BARRIER(iCommGITM,iError)
-       call mpi_bcast(SAMIPhi_g,nf*nlt,MPI_REAL,0,iCommGITM,iError)
-       call MPI_BARRIER(iCommGITM,iError)
+        call MPI_BARRIER(iCommGITM,iError)
+!        call mpi_bcast(SAMIPhi_g,nf*nlt,MPI_REAL,0,iCommGITM,iError)
+        call MPI_BARRIER(iCommGITM,iError)
 
-       call report("Done Broadcasting SAMI Data",0)
+!        call report("Done Broadcasting SAMI Data",0)
 
-    else if (iCommSAMI0 /= MPI_COMM_NULL) then
+     else if (iCommSAMI0 /= MPI_COMM_NULL) then
 
-       call MPI_INTERCOMM_CREATE(iCommSAMI0,0, &
-            iCommGlobal,0,tag_inter,intercomm2,iError)
-       call MPI_COMM_RANK(intercomm2,irank,iError)
+        call MPI_INTERCOMM_CREATE(iCommSAMI0,0, &
+             iCommGlobal,0,tag_inter,intercomm2,iError)
+        call MPI_COMM_RANK(intercomm2,irank,iError)
 
-       if(irank ==0) then
+        if(irank ==0) then
 
-          !!send to GITM
-          call MPI_send(SAMIVars,&
-               nf*nz*nlt*10,&
-               MPI_REAL,0,tag_SandR,&
-               intercomm2,iError)
+!           !!send to GITM
+!           call MPI_send(SAMIVars,&
+!                nf*nz*nlt*10,&
+!                MPI_REAL,0,tag_SandR,&
+!                intercomm2,iError)
 
-          call MPI_send(SAMIPhi,&
-               nf*nlt,&
-               MPI_REAL,0,tag_SandR,&
-               intercomm2,iError)
+!           call MPI_send(SAMIPhi,&
+!                nf*nlt,&
+!                MPI_REAL,0,tag_SandR,&
+!                intercomm2,iError)
 
-          !print*,'SAMIPhi sami',SAMIPhi(:,1)
+!           !print*,'SAMIPhi sami',SAMIPhi(:,1)
 
-       endif
-    endif
+        endif
+     endif 
 
 
     if (iCommGITM /= MPI_COMM_NULL) then

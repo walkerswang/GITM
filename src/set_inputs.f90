@@ -806,7 +806,7 @@ subroutine set_inputs
            else
               if (index(cAMIEFileNorth,"none") == 0 .and. &
                    .not. HasSetAuroraMods) &
-                   NormalizeAuroraToHP = .false.
+                   NormalizeAuroraToHP = .true.
            endif
 
         case ("#USEREGIONALAMIE")
