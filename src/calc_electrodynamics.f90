@@ -137,8 +137,9 @@ subroutine UA_calc_electrodynamics(UAi_nMLTs, UAi_nLats)
           dKDpmdpMC(nMagLons+1,nMagLats), dKlmdlMC(nMagLons+1,nMagLats), &
           dKDlmdlMC(nMagLons+1,nMagLats),  dKpmdpMC(nMagLons+1,nMagLats), &
           DynamoPotentialMC(nMagLons+1,nMagLats), &
+          DynamoPotentialMC0(nMagLons+1,nMagLats), &
           Ed1new(nMagLons+1,nMagLats), Ed2new(nMagLons+1,nMagLats), &
-          OldPotMC(nMagLons+1,nMagLats), &
+          OldPotMC(nMagLons+1,nMagLats), OldPotMC0(nMagLons+1, nMagLats), &
           stat = iError)
 
      allocate(SmallMagLocTimeMC(nMagLons+1,2), &
@@ -189,6 +190,8 @@ subroutine UA_calc_electrodynamics(UAi_nMLTs, UAi_nLats)
      Ed1new = 0.0
      Ed2new = 0.0
      DynamoPotentialMC = 0.0
+     DynamoPotentialMC0= 0.0
+     OldPotMC = 0.0
      OldPotMC = 0.0
 
      if (iError /= 0) then
@@ -1395,8 +1398,6 @@ subroutine UA_calc_electrodynamics(UAi_nMLTs, UAi_nLats)
    ! Add this to make sure solver_a never goes below 0
    where(solver_a_mc < 0.001) solver_a_mc = 0.001
 
-   DynamoPotentialMC = 0.0
-
   ! Fill in the diagonal vectors
   iI = 0
 
@@ -1531,6 +1532,96 @@ subroutine UA_calc_electrodynamics(UAi_nMLTs, UAi_nLats)
   enddo
 
   DynamoPotentialMC(nMagLons+1,:) = DynamoPotentialMC(1,:)
+
+  iI=0
+  do iLat=2,nMagLats-1
+     do iLon=1,nMagLons
+
+        iI = iI + 1
+
+        ! Right hand side
+        b(iI)    = solver_s_mc(iLon, iLat)  
+
+        ! Initial Guess
+        x(iI)    = DynamoPotentialMC0(iLon, iLat)
+     
+        ! i,j
+        d_I(iI)  = -2*(solver_a_mc(iLon, iLat)+solver_b_mc(iLon, iLat))
+
+        ! ilon-1, ilat
+        e_I(iI)  = solver_a_mc(iLon, iLat)-solver_e_mc(iLon, iLat)
+  
+        ! ilon+1, ilat
+        f_I(iI)  = solver_a_mc(iLon, iLat)+solver_e_mc(iLon, iLat)
+       
+        ! ilon, ilat-1
+        e1_I(iI) = solver_b_mc(iLon, iLat)-solver_d_mc(iLon, iLat)
+       
+        ! ilon, ilat+1
+        f1_I(iI) = solver_b_mc(iLon, iLat)+solver_d_mc(iLon, iLat)
+     end do
+  end do
+
+  call start_timing("dynamo_solver")
+
+  Rhs = b
+
+!!!  write(*,*) "prehepta"
+!!!  ! A -> LU
+!!!
+!!!  write(*,*) "pre : ", &
+!!!       sum(b),sum(abs(b)),sum(x),sum(d_I),sum(e_I),sum(f_I),&
+!!!       sum(e1_I),sum(f1_I)
+!!!
+  call prehepta(nX,1,nMagLons,nX,-0.5,d_I,e_I,f_I,e1_I,f1_I)
+!!!
+!!!  ! Left side preconditioning: U^{-1}.L^{-1}.A.x = U^{-1}.L^{-1}.rhs
+!!!
+!!!  ! rhs'=U^{-1}.L^{-1}.rhs
+!!!  write(*,*) "Lhepta"
+  call Lhepta(       nX,1,nMagLons,nX,b,d_I,e_I,e1_I)
+!!!  write(*,*) "Uhepta"
+  call Uhepta(.true.,nX,1,nMagLons,nX,b,    f_I,f1_I)
+
+  MaxIteration = 200      !good enough
+  nIteration = 0
+  iError = 0
+  if (iDebugLevel > 2) then
+     DoTestMe = .true.
+  else
+     DoTestMe = .false.
+  endif
+
+  Residual = 1.0    !! Residual = 1.0 iterations required ~ 103 
+             !! with Residual=0.01,only 20 more iterations are required (~ 122)
+  call gmres(matvec_gitm,b,x,.true.,nX,&
+       MaxIteration,Residual,'abs',nIteration,iError,DoTestMe)
+
+  call end_timing("dynamo_solver")
+
+  if (iDebugLevel > 0) &
+       write(*,*) "=> gmres : ",MaxIteration,Residual, nIteration, iError
+
+  iI = 0
+  do iLat=2,nMagLats-1
+     do iLon=1,nMagLons
+        iI = iI + 1
+        DynamoPotentialMC0(iLon, iLat) = x(iI)
+     enddo
+  enddo
+  DynamoPotentialMC0(:,        1) = 0.0
+  DynamoPotentialMC0(:, nMagLats) = 0.0
+
+  OldPotMC0 = DynamoPotentialMC0
+
+  do iLat=2,nMagLats/2
+     do iLon=1,nMagLons
+        iI = nMagLats - iLat + 1
+        DynamoPotentialMC0(iLon, iLat) = OldPotMC0(iLon,iI) 
+     enddo
+  enddo
+
+  DynamoPotentialMC0(nMagLons+1,:) = DynamoPotentialMC0(1,:)
 
   if(allocated(b)) deallocate(x, y, b, rhs, d_I, e_I, f_I, e1_I, f1_I)
 ! Electric fields
