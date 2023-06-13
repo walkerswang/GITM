@@ -118,6 +118,12 @@ contains
             (iBlock-1)*(nAlts+4)-1:iBlock*(nAlts+4)-2) = &
             Potential(:,:,:,iBlock)
 
+       GITMVars(15,&
+            (iBlock-1)*(nLons+4)-1:iBlock*(nLons+4)-2,&
+            (iBlock-1)*(nLats+4)-1:iBlock*(nLats+4)-2,&
+            (iBlock-1)*(nAlts+4)-1:iBlock*(nAlts+4)-2) = &
+            PPEF(:,:,:,iBlock)
+    
        GITMLons((iBlock-1)*(nLons+4)-1:iBlock*(nLons+4)-2) = &
             Longitude(:,iBlock)
 
