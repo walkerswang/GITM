@@ -540,12 +540,13 @@ subroutine get_potential(iBlock)
                    dis= (DynamoHighLatBoundary - &
                         abs(MLatitude(iLon, iLat, iAlt, iBlock)))/20.0
                    if (dis > 1.0) then
-                      tempppef(iLon,iLat) = dynamo(iLon,iLat)-dynamo0(iLon, iLat)
+                      tempppef(iLon,iLat) = (dynamo(iLon,iLat)-dynamo0(iLon, iLat))*1.0
                    else
                       tempppef(iLon,iLat) = &
                            (1.0-dis) * tempppef(iLon,iLat) + &
-                           dis * (dynamo(iLon,iLat)-dynamo0(iLon, iLat))
+                           dis * ((dynamo(iLon,iLat)-dynamo0(iLon, iLat))*1.0)
                    endif
+                   ! tempppef(iLon, iLat)=tempppef(iLon, iLat) * 0.0
                 endif
              enddo
           enddo
