@@ -419,7 +419,7 @@ subroutine UA_GetNonGridBasedPotential(PotentialOut, iError)
         endif
 
         if (index(EIE_NameOfEFieldModel,'weimer05') > 0) then
-           if (abs(lat) >= 45.0) then 
+           if (abs(lat) >= 10.0) then 
               hr = float(iHour) + float(iMinute)/60.0
               if (IsFixedTilt) then
                  tilt = 0.0
@@ -439,7 +439,7 @@ subroutine UA_GetNonGridBasedPotential(PotentialOut, iError)
 	endif
 
         if (index(EIE_NameOfEFieldModel,'weimer96') > 0) then
-           if (abs(lat) >= 45.0) then 
+           if (abs(lat) >= 10.0) then 
               !call timing_start("weimer")
               call WEIEPOT96(iYear, iMonth, iDay, iHour, iMinute, IOr_NeedSWV, &
                    IOr_NeedIMFBy, IOr_NeedIMFBz, iHemisphere, iChange, &
